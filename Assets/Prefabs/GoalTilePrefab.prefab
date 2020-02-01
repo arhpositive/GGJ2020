@@ -1,5 +1,24 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-1701335875326471413
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6073088742476940079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e51a84c5359eb3240a32295823c7e729, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SwipeSpeed: 5
+  JubilationCoef: 0.2
+  ConnectionDirs:
+  - {x: 1, y: 0}
+  - {x: -1, y: 0}
+  - {x: 0, y: 1}
+  - {x: 0, y: -1}
 --- !u!1001 &6073088742476940095
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -70,17 +89,35 @@ PrefabInstance:
     - target: {fileID: 143107888254116990, guid: 1a418a21bb4e1824ca46bc41c143043a,
         type: 3}
       propertyPath: m_Color.r
-      value: 0.93333334
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 143107888254116990, guid: 1a418a21bb4e1824ca46bc41c143043a,
         type: 3}
       propertyPath: m_Color.g
-      value: 0.7019608
+      value: 0.93333334
       objectReference: {fileID: 0}
     - target: {fileID: 143107888254116990, guid: 1a418a21bb4e1824ca46bc41c143043a,
         type: 3}
       propertyPath: m_Color.b
-      value: 0.33333334
+      value: 1
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    - target: {fileID: 143107888254116990, guid: 1a418a21bb4e1824ca46bc41c143043a,
+        type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 7694da76b50bc944ab27cd99c8f49765,
+        type: 3}
+    - target: {fileID: 143107888254116990, guid: 1a418a21bb4e1824ca46bc41c143043a,
+        type: 3}
+      propertyPath: m_Color.a
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: -6570933304775943927, guid: 1a418a21bb4e1824ca46bc41c143043a, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: 1a418a21bb4e1824ca46bc41c143043a, type: 3}
+--- !u!1 &6073088742476940079 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 844076336333097140, guid: 1a418a21bb4e1824ca46bc41c143043a,
+    type: 3}
+  m_PrefabInstance: {fileID: 6073088742476940095}
+  m_PrefabAsset: {fileID: 0}

@@ -3,15 +3,15 @@
 public class LevelDesign
 {
     public int CameraSize;
-    public Vector3 CameraTargetPos;
+    public Vector3 CameraPos;
     public int[,] LevelLayout;
     public int LevelWidth;
     public int LevelHeight;
 
-    public LevelDesign(int cameraSize, Vector3 cameraTargetPos, int[,] levelLayout)
+    public LevelDesign(int cameraSize, Vector3 cameraPos, int[,] levelLayout)
     {
         CameraSize = cameraSize;
-        CameraTargetPos = cameraTargetPos;
+        CameraPos = cameraPos;
         LevelLayout = levelLayout;
         LevelWidth = levelLayout.GetLength(0);
         LevelHeight = levelLayout.GetLength(1);

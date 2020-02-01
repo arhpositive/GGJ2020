@@ -10,8 +10,9 @@ GameObject:
   m_Component:
   - component: {fileID: 2711190779407151063}
   - component: {fileID: 143107888254116990}
+  - component: {fileID: -6570933304775943927}
   m_Layer: 0
-  m_Name: SquareTile
+  m_Name: TilePrefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -69,7 +70,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: 105e0a1e7bd064746876717304050027, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 6d9466184bbc778458377229483ac8f2, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -80,3 +81,18 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &-6570933304775943927
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 844076336333097140}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7fb3439206b44ef408527a9a4280729f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SwipeSpeed: 5
+  JubilationCoef: 0.1
+  ConnectionDirs: []

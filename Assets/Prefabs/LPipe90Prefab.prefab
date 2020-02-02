@@ -78,5 +78,10 @@ PrefabInstance:
       propertyPath: ConnectionDirs.Array.data[1].y
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 8432865536920226132, guid: 8f51a4e8393befb4fa7a8187d173f938,
+        type: 3}
+      propertyPath: CanBeMoved
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8f51a4e8393befb4fa7a8187d173f938, type: 3}

@@ -95,4 +95,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   SwipeSpeed: 5
   JubilationCoef: 0.1
+  CanBeMoved: 1
   ConnectionDirs: []

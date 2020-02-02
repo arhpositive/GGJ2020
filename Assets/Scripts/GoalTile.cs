@@ -1,18 +1,29 @@
 ﻿using UnityEngine;
 
+public enum GoalType
+{
+    gt_score,
+    gt_bomb,
+    gt_timeBonus
+}
+
 public class GoalTile : Tile
 {
-    private void Start()
+    public GoalType typeOfGoal;
+    public int timeBonus;
+
+    internal override void Start()
     {
-        _usedUp = false;
-        _canBeMoved = false;
-        _inJubilation = true;
-        _jubilationStartTime = Time.time;
-        ResetSwipe();
+        base.Start();
     }
 
-    public override bool CanBeMoved() 
+    internal override void Update()
     {
-        return _canBeMoved;
+        base.Update();      
+    }
+
+    internal override void Jubilation()
+    {
+        base.Jubilation();
     }
 }

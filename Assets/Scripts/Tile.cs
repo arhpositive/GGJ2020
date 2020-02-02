@@ -1,16 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class Tile : MonoBehaviour
 {
     public float SwipeSpeed = 5.0f;
     public float JubilationCoef = 0.1f;
 
+    public bool CanBeMoved;
     public Vector2Int[] ConnectionDirs;
+    public bool RemoveOnUse;
 
     protected Vector2Int _tilePosition;
-    protected bool _canBeMoved;
+    
     protected bool _inJubilation;
     protected float _jubilationStartTime;
     protected bool _usedUp;
@@ -21,10 +21,9 @@ public class Tile : MonoBehaviour
     private bool _inMotion;
 
     // Start is called before the first frame update
-    void Start()
+    internal virtual void Start()
     {
         _usedUp = false;
-        _canBeMoved = true;
         FinalizeJubilation();
         ResetSwipe();
     }
@@ -43,7 +42,7 @@ public class Tile : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    internal virtual void Update()
     {
         if (_inMotion)
         {
@@ -73,6 +72,10 @@ public class Tile : MonoBehaviour
             {
                 transform.localScale = Vector3.one;
                 FinalizeJubilation();
+                if (RemoveOnUse)
+                {
+                    Destroy(gameObject);
+                }
             }
             else
             {
@@ -81,17 +84,19 @@ public class Tile : MonoBehaviour
         }
     }
 
-    public void SwipeTile(Vector2Int newTilePosition)
+    public bool SwipeTile(Vector2Int newTilePosition)
     {
-        if (!_inMotion)
+        if (_inMotion)
         {
-            _inMotion = true;
+            return false;
+        }
 
-            _swipeBegin = new Vector3(_tilePosition.x, _tilePosition.y, 0);
-            _swipeDestination = new Vector3(newTilePosition.x, newTilePosition.y, 0);
-            _swipeStartTime = Time.time;
-            SetTilePosition(newTilePosition);
-        }       
+        _inMotion = true;
+        _swipeBegin = new Vector3(_tilePosition.x, _tilePosition.y, 0);
+        _swipeDestination = new Vector3(newTilePosition.x, newTilePosition.y, 0);
+        _swipeStartTime = Time.time;
+        SetTilePosition(newTilePosition);
+        return true;
     }
 
     public void SetTilePosition(Vector2Int tilePosition)
@@ -109,17 +114,12 @@ public class Tile : MonoBehaviour
         return _inMotion;
     }
 
-    public virtual bool CanBeMoved()
-    {
-        return _canBeMoved;
-    }
-
-    internal void Jubilation()
-    {
+    internal virtual void Jubilation()
+    {        
         GetComponent<SpriteRenderer>().color = Color.green;
         _inJubilation = true;
         _jubilationStartTime = Time.time;
-        _canBeMoved = false;
+        CanBeMoved = false;
         _usedUp = true;
     }
 

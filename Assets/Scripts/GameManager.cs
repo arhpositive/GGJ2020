@@ -7,7 +7,14 @@ using Random = UnityEngine.Random;
 
 public class GameManager : MonoBehaviour
 {
-    public GameObject emptyTilePrefab;
+    public AudioClip[] explosionEffects;
+    public AudioClip[] swipingEffects;
+    public AudioClip[] timeLimitEffects;
+    public AudioClip[] timeOverEffects;
+    public AudioClip[] retryEffects;
+    public AudioClip[] successEffects;
+
+    public GameObject[] emptyTilePrefabs;
     public GameObject lPipeTilePrefab;
     public GameObject rPipeTilePrefab;
     public GameObject lPipe90TilePrefab;
@@ -16,15 +23,20 @@ public class GameManager : MonoBehaviour
     public GameObject straightPipe2TilePrefab;
     public GameObject startTilePrefab;
     public GameObject goalTilePrefab;
+    public GameObject bombTilePrefab; //removes itself when connected, does not lock down pipes
+    public GameObject timeBonusTilePrefab; //adds time when connected, does not lock down pipes but locks itself down
 
     public Button nextLevelButton;
+    public Button retryLevelButton;
+    public Text timeLimitText;
 
     private List<LevelDesign> _levelDesigns;
     private int _currentLevelDesignIndex;
 
     private List<GameObject> _currentLevelGameObjects;
     private Tile[,] _currentLevelTiles;
-    private List<Vector2> _currentVoidCoords;
+    //timelimit parameters
+    private int _currentLevelTimeLimit;
 
     //swipe parameters
     private Vector2Int _swipeStartPos;
@@ -37,15 +49,19 @@ public class GameManager : MonoBehaviour
     //connectivity parameters
     private List<StartTile> _startTiles;
     private List<GoalTile> _goalTiles;
-    //TODO probably not going to happen, but you can change the type of effect 
-    //when two objects connect with inheritance and extending start/goal tiles
+
+    private AudioSource _audioSource;
 
     // Start is called before the first frame update
     void Start()
     {
+        _audioSource = GetComponent<AudioSource>();
+        _audioSource.Play();
+
         _levelDesigns = new List<LevelDesign>();
         _currentLevelGameObjects = new List<GameObject>();
-        _currentVoidCoords = new List<Vector2>();
+        _currentLevelTimeLimit = 0;
+        UpdateTimeLimitText();
         _startTiles = new List<StartTile>();
         _goalTiles = new List<GoalTile>();
         _swipeTile = null;
@@ -68,6 +84,12 @@ public class GameManager : MonoBehaviour
         {
             _swipeInProgress = false;
             CheckForConnectivity();
+            if (_currentLevelTimeLimit == 0)
+            {
+                //light text color and retry button color to red!
+                AudioSource.PlayClipAtPoint(timeOverEffects[Random.Range(0, timeOverEffects.Length)], transform.position);
+                ApplyMoveLimitVisualEffects(Color.red, Color.red);
+            }
         }
 
         if (Input.GetMouseButtonDown(0))
@@ -102,6 +124,17 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    private void ApplyMoveLimitVisualEffects(Color buttonColor, Color textColor)
+    {
+        retryLevelButton.GetComponent<Image>().color = buttonColor;
+        timeLimitText.color = textColor;
+    }
+
+    private void UpdateTimeLimitText()
+    {
+        timeLimitText.text = _currentLevelTimeLimit.ToString("0000");
+    }
+
     private Vector2Int GetTileCoordsFromMousePosition()
     {
         Vector3 pressedPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
@@ -114,7 +147,6 @@ public class GameManager : MonoBehaviour
         //we'll hold the levels in a csv format file
         //we'll load the levels from the folder here
 
-        //TODO path will be changed
         String path = Application.streamingAssetsPath + "/Levels/";
 
         var info = new DirectoryInfo(path);
@@ -132,6 +164,7 @@ public class GameManager : MonoBehaviour
             Vector3 cameraPos = new Vector3(  Convert.ToInt32(splitParameters[1]),
                                                     Convert.ToInt32(splitParameters[2]),
                                                     Convert.ToInt32(splitParameters[3]));
+            int levelTimeLimit = Convert.ToInt32(splitParameters[4]);
 
             string wholeFile = reader.ReadToEnd();
             string[] singleLines = wholeFile.Split('\n');
@@ -147,7 +180,7 @@ public class GameManager : MonoBehaviour
                 }
             }
 
-            //TODO this is very bad. a custom offset here really hurts modding, players might create maps that crash the game
+            //this is very bad. a custom offset here really hurts modding, players might create maps that crash the game
             int lineCount = singleLines.Length - 1; 
 
             int[,] levelLayout = new int[columnCount, lineCount];
@@ -166,7 +199,7 @@ public class GameManager : MonoBehaviour
                 }
             }
 
-            _levelDesigns.Add(new LevelDesign(cameraSize, cameraPos, levelLayout));
+            _levelDesigns.Add(new LevelDesign(cameraSize, cameraPos, levelLayout, levelTimeLimit));
 
             //there might be a third section of the level designer 
             //indicating "lines that will come in the future"
@@ -188,8 +221,7 @@ public class GameManager : MonoBehaviour
 
         _startTiles.Clear();
         _goalTiles.Clear();
-        _currentVoidCoords.Clear();
-        _currentLevelTiles = null; //TODO does this even work? how can we clear this? do we need to?
+        _currentLevelTiles = null; //does this even work? how can we clear this? do we need to?
     }
 
     private void LoadLevel(int levelIndex)
@@ -203,6 +235,9 @@ public class GameManager : MonoBehaviour
         //set camera position and size
         Camera.main.transform.position = currentLevel.CameraPos;
         Camera.main.orthographicSize = currentLevel.CameraSize;
+        _currentLevelTimeLimit = currentLevel.LevelTimeLimit;
+        UpdateTimeLimitText();
+        ApplyMoveLimitVisualEffects(Color.white, Color.black);
 
         //set current level tiles
         _currentLevelTiles = new Tile[currentLevel.LevelWidth, currentLevel.LevelHeight];
@@ -217,11 +252,10 @@ public class GameManager : MonoBehaviour
                 {
                     case 0:
                         //no tile, but we might need something later on
-                        _currentVoidCoords.Add(coordsVec);
                         break;
                     case 1:
                         //empty tile                   
-                        go = Instantiate(emptyTilePrefab, coordsVec, Quaternion.identity) as GameObject;
+                        go = Instantiate(emptyTilePrefabs[Random.Range(0, emptyTilePrefabs.Length)], coordsVec, Quaternion.identity) as GameObject;
                         go.transform.Rotate(new Vector3(0, 0, Random.Range(0, 4) * 90));
                         _currentLevelTiles[coordX, coordY] = go.GetComponent<Tile>();
                         _currentLevelTiles[coordX, coordY].SetTilePosition(new Vector2Int(coordX, coordY));
@@ -239,37 +273,40 @@ public class GameManager : MonoBehaviour
                         break;
                     case 3:
                         //goal tile
-                        go = Instantiate(goalTilePrefab, coordsVec, Quaternion.identity) as GameObject;
-                        go.transform.Rotate(new Vector3(0, 0, Random.Range(0, 4) * 90));
-                        _currentLevelTiles[coordX, coordY] = go.GetComponent<GoalTile>();
-                        _currentLevelTiles[coordX, coordY].SetTilePosition(new Vector2Int(coordX, coordY));
-                        _currentLevelGameObjects.Add(go);
+                        AddLevelTileToLists(goalTilePrefab, coordX, coordY, coordsVec, true);
                         break;
                     case 4:
                         //straight pipe
-                        AddLevelTileToLists(straightPipeTilePrefab, coordX, coordY, coordsVec);
+                        AddLevelTileToLists(straightPipeTilePrefab, coordX, coordY, coordsVec, false);
                         break;
                     case 5:
                         //str2-pipe
-                        AddLevelTileToLists(straightPipe2TilePrefab, coordX, coordY, coordsVec);
+                        AddLevelTileToLists(straightPipe2TilePrefab, coordX, coordY, coordsVec, false);
                         break;
                     case 6:
                         //l-pipe
-                        AddLevelTileToLists(lPipeTilePrefab, coordX, coordY, coordsVec);
+                        AddLevelTileToLists(lPipeTilePrefab, coordX, coordY, coordsVec, false);
                         break;
                     case 7:
                         //l-pipe90
-                        AddLevelTileToLists(lPipe90TilePrefab, coordX, coordY, coordsVec);
+                        AddLevelTileToLists(lPipe90TilePrefab, coordX, coordY, coordsVec, false);
                         break;
                     case 8:
                         //r-pipe
-                        AddLevelTileToLists(rPipeTilePrefab, coordX, coordY, coordsVec);
+                        AddLevelTileToLists(rPipeTilePrefab, coordX, coordY, coordsVec, false);
                         break;
                     case 9:
                         //r-pipe90
-                        AddLevelTileToLists(rPipe90TilePrefab, coordX, coordY, coordsVec);
+                        AddLevelTileToLists(rPipe90TilePrefab, coordX, coordY, coordsVec, false);
                         break;
-
+                    case 10:
+                        //bomb
+                        AddLevelTileToLists(bombTilePrefab, coordX, coordY, coordsVec, false);
+                        break;
+                    case 11:
+                        //timebonus
+                        AddLevelTileToLists(timeBonusTilePrefab, coordX, coordY, coordsVec, false);
+                        break;
                     default:
                         throw new System.NotImplementedException();
                 }
@@ -277,9 +314,13 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private void AddLevelTileToLists(GameObject prefab, int coordX, int coordY, Vector3 coordsVec)
+    private void AddLevelTileToLists(GameObject prefab, int coordX, int coordY, Vector3 coordsVec, bool rotate)
     {
         GameObject go = Instantiate(prefab, coordsVec, Quaternion.identity) as GameObject;
+        if (rotate)
+        {
+            go.transform.Rotate(new Vector3(0, 0, Random.Range(0, 4) * 90));
+        }
         _currentLevelTiles[coordX, coordY] = go.GetComponent<Tile>();
         _currentLevelTiles[coordX, coordY].SetTilePosition(new Vector2Int(coordX, coordY));
         _currentLevelGameObjects.Add(go);
@@ -287,19 +328,26 @@ public class GameManager : MonoBehaviour
 
     private void OnSwipe()
     {
-        if ((_swipeStartPos != _swipeEndPos) && IsWithinBounds(_swipeStartPos) && IsWithinBounds(_swipeEndPos))
+        if (_currentLevelTimeLimit > 0 && (_swipeStartPos != _swipeEndPos) && IsWithinBounds(_swipeStartPos) && IsWithinBounds(_swipeEndPos))
         {
             //coordinates are within bounds
             _swipeTile = _currentLevelTiles[_swipeStartPos.x, _swipeStartPos.y];
 
-            //TODO a swipe from a full tile to an empty tile is valid
-            if (_swipeTile != null && _swipeTile.CanBeMoved() && _currentLevelTiles[_swipeEndPos.x, _swipeEndPos.y] == null)
+            //a swipe from a full tile to an empty tile is valid
+            if (_swipeTile != null && _swipeTile.CanBeMoved && _currentLevelTiles[_swipeEndPos.x, _swipeEndPos.y] == null)
             {
                 //swap tiles
                 _currentLevelTiles[_swipeEndPos.x, _swipeEndPos.y] = _swipeTile;
                 _currentLevelTiles[_swipeStartPos.x, _swipeStartPos.y] = null;
 
-                _swipeTile.SwipeTile(_swipeEndPos);
+                bool swipeSuccessful = _swipeTile.SwipeTile(_swipeEndPos);
+
+                if (swipeSuccessful)
+                {
+                    AudioSource.PlayClipAtPoint(swipingEffects[Random.Range(0, swipingEffects.Length)], transform.position);
+                    --_currentLevelTimeLimit;
+                    UpdateTimeLimitText();
+                }
             }
         }
     }
@@ -324,18 +372,19 @@ public class GameManager : MonoBehaviour
 
             //check if this tile reaches any goal tiles by connecting via the pipes
             List<Tile> pathToSuccess = new List<Tile>();
-            connectionFound = CheckTileConnections(st, Vector2Int.zero, st, pathToSuccess);
+            GoalTile goalThatWasFound = null;
+            connectionFound = CheckTileConnections(st, Vector2Int.zero, st, pathToSuccess, out goalThatWasFound);
 
             if (connectionFound)
             {
-                JubilationInNewark(pathToSuccess);
+                JubilationInNewark(pathToSuccess, goalThatWasFound);
 
                 break;
             }
         }
     }
 
-    private bool CheckTileConnections(Tile tile, Vector2Int incomingDir, Tile lastEncounteredStartTile, List<Tile> pathToSuccess)
+    private bool CheckTileConnections(Tile tile, Vector2Int incomingDir, Tile lastEncounteredStartTile, List<Tile> pathToSuccess, out GoalTile goalThatWasFound)
     {
         if (tile is StartTile)
         {
@@ -343,7 +392,10 @@ public class GameManager : MonoBehaviour
             pathToSuccess.Clear();
         }
 
-        bool goalFound = tile is GoalTile;
+        bool goalFound = tile is GoalTile && !tile.IsUsedUp();
+
+        goalThatWasFound = goalFound ? (GoalTile)tile : null;
+
         bool linkedToPreviousTile = (tile == lastEncounteredStartTile);
 
         foreach (Vector2Int cd in tile.ConnectionDirs)
@@ -380,7 +432,7 @@ public class GameManager : MonoBehaviour
 
                     if (targetTile) //space could be empty altogether
                     {
-                        goalFound = CheckTileConnections(targetTile, new Vector2Int(-cd.x, -cd.y), lastEncounteredStartTile, pathToSuccess);
+                        goalFound = CheckTileConnections(targetTile, new Vector2Int(-cd.x, -cd.y), lastEncounteredStartTile, pathToSuccess, out goalThatWasFound);
                     }
                 }                
             }            
@@ -390,11 +442,33 @@ public class GameManager : MonoBehaviour
 
     //this is a meme name, i'm a nets fan
     //one connection succeeded
-    private void JubilationInNewark(List<Tile> pathToSuccess)
+    private void JubilationInNewark(List<Tile> pathToSuccess, GoalTile goalThatWasFound)
     {
-        foreach(Tile t in pathToSuccess)
+        switch (goalThatWasFound.typeOfGoal)
         {
-            t.Jubilation();
+            case GoalType.gt_bomb:
+                goalThatWasFound.Jubilation();
+                AudioSource.PlayClipAtPoint(explosionEffects[Random.Range(0, explosionEffects.Length)], transform.position);
+                //this should actually come from removeOnUse
+                Vector2Int tilePos = goalThatWasFound.GetTilePosition();
+                _currentLevelTiles[tilePos.x, tilePos.y] = null;
+                break;
+            case GoalType.gt_score:
+                AudioSource.PlayClipAtPoint(successEffects[Random.Range(0, successEffects.Length)], transform.position);
+                foreach (Tile t in pathToSuccess)
+                {
+                    t.Jubilation();
+                }
+                break;
+            case GoalType.gt_timeBonus:
+                goalThatWasFound.Jubilation();
+                AudioSource.PlayClipAtPoint(timeLimitEffects[Random.Range(0, timeLimitEffects.Length)], transform.position);
+                _currentLevelTimeLimit += goalThatWasFound.timeBonus;
+                UpdateTimeLimitText();
+                ApplyMoveLimitVisualEffects(Color.white, Color.blue);
+                break;
+            default:
+                break;
         }
 
         bool allGoalsDone = true;
@@ -408,19 +482,30 @@ public class GameManager : MonoBehaviour
 
         if (allGoalsDone)
         {
-            //TODO just open up the next level button, do not push it
             nextLevelButton.interactable = true;
+            nextLevelButton.GetComponent<Image>().color = Color.green;
         }
     }
 
     public void RetryLevel()
     {
+        AudioSource.PlayClipAtPoint(retryEffects[Random.Range(0, retryEffects.Length)], transform.position);
         LoadLevel(_currentLevelDesignIndex);
     }
 
     public void NextLevel()
     {
-        LoadLevel(_currentLevelDesignIndex + 1);
+        AudioSource.PlayClipAtPoint(retryEffects[Random.Range(0, retryEffects.Length)], transform.position);
+        if (_currentLevelDesignIndex < _levelDesigns.Count)
+        {
+            LoadLevel(_currentLevelDesignIndex + 1);
+        }
+        else
+        {
+            //TODO game is finished!
+            LoadLevel(0);
+        }
         nextLevelButton.interactable = false;
+        nextLevelButton.GetComponent<Image>().color = Color.white;
     }
 }
